@@ -1,4 +1,4 @@
-// Copyright 2024 huija
+// Copyright 2021-2026 huija
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,9 +19,9 @@ import (
 	"github.com/taouniverse/tao"
 	"gorm.io/gorm"
 
-	// Load the required dependencies.
-	// An error occurs when there was no package in the root directory.
+	// sqlite driver for gorm
 	_ "github.com/glebarez/sqlite"
+	// gorm package
 	_ "gorm.io/gorm"
 )
 
@@ -29,25 +29,44 @@ import (
 import _ "github.com/taouniverse/tao-sqlite"
 */
 
-// S config of sqlite
-var S = new(Config)
+// S is the global config instance for tao-sqlite
+var S = &Config{}
+
+// Factory is the global factory instance for managing gorm.DB
+var Factory *tao.BaseFactory[*gorm.DB]
 
 func init() {
-	err := tao.Register(ConfigKey, S, setup)
+	var err error
+	Factory, err = tao.Register(ConfigKey, S, NewSQLite)
 	if err != nil {
 		panic(err.Error())
 	}
 }
 
-// DB orm client of sqlite
-var DB *gorm.DB
-
-// setup unit with the global config 'S'
-// execute when init tao universe
-func setup() (err error) {
-	DB, err = gorm.Open(sqlite.Open(S.DB), &gorm.Config{})
+// NewSQLite creates a new SQLite client for factory pattern
+func NewSQLite(name string, config InstanceConfig) (*gorm.DB, func() error, error) {
+	db, err := gorm.Open(sqlite.Open(config.DB), &gorm.Config{})
 	if err != nil {
-		return tao.NewErrorWrapped("sqlite: fail to create gorm client", err)
+		return nil, nil, tao.NewErrorWrapped("sqlite: fail to create gorm client", err)
 	}
-	return nil
+
+	closer := func() error {
+		sqlDB, err := db.DB()
+		if err != nil {
+			return err
+		}
+		return sqlDB.Close()
+	}
+
+	return db, closer, nil
+}
+
+// DB returns the default gorm DB instance
+func DB() (*gorm.DB, error) {
+	return Factory.Get(S.GetDefaultInstanceName())
+}
+
+// GetDB returns the gorm DB instance by name
+func GetDB(name string) (*gorm.DB, error) {
+	return Factory.Get(name)
 }

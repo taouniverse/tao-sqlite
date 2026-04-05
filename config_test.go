@@ -1,4 +1,4 @@
-// Copyright 2024 huija
+// Copyright 2021-2026 huija
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,15 +15,33 @@
 package sqlite
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/taouniverse/tao"
 )
 
 func TestConfig(t *testing.T) {
-	s := new(Config)
+	s := &Config{
+		BaseMultiConfig: tao.BaseMultiConfig[InstanceConfig]{
+			Instances: map[string]InstanceConfig{
+				"default": {},
+			},
+		},
+	}
 	s.ValidSelf()
-	assert.EqualValues(t, s, defaultSqlite)
+
+	instance := s.Instances["default"]
+	assert.Equal(t, "sqlite.db", instance.DB)
 
 	t.Log(s.RunAfter())
 	t.Log(s.ToTask())
+}
+
+func TestConfigDefaultInstanceName(t *testing.T) {
+	c := &Config{}
+	assert.Equal(t, "default", c.GetDefaultInstanceName())
+
+	c.Default = "master"
+	assert.Equal(t, "master", c.GetDefaultInstanceName())
 }

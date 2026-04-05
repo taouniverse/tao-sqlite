@@ -1,0 +1,6 @@
+sqlite:
+  default_instance: master
+  master:
+    db: master.db
+  replica:
+    db: replica.db
