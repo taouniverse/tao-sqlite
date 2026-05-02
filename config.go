@@ -45,11 +45,11 @@ func (s *Config) Name() string {
 
 // ValidSelf with some default values
 func (s *Config) ValidSelf() {
-	for name, instance := range s.Instances {
+	for i := range s.Instances {
+		instance := &s.Instances[i].Cfg
 		if instance.DB == "" {
 			instance.DB = defaultInstance.DB
 		}
-		s.Instances[name] = instance
 	}
 	if s.RunAfters == nil {
 		s.RunAfters = []string{}
@@ -66,7 +66,8 @@ func (s *Config) ToTask() tao.Task {
 				return param, tao.NewError(tao.ContextCanceled, "%s: context has been canceled", ConfigKey)
 			default:
 			}
-			for name := range s.Instances {
+			for _, inst := range s.Instances {
+				name := inst.Name
 				db, err := Factory.Get(name)
 				if err != nil {
 					return param, err

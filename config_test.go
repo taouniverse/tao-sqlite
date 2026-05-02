@@ -24,14 +24,14 @@ import (
 func TestConfig(t *testing.T) {
 	s := &Config{
 		BaseMultiConfig: tao.BaseMultiConfig[InstanceConfig]{
-			Instances: map[string]InstanceConfig{
-				"default": {},
+			Instances: []tao.Instance[InstanceConfig]{
+				{Name: "default", Cfg: InstanceConfig{}},
 			},
 		},
 	}
 	s.ValidSelf()
 
-	instance := s.Instances["default"]
+	instance, _ := s.GetInstanceByName("default")
 	assert.Equal(t, "sqlite.db", instance.DB)
 
 	t.Log(s.RunAfter())
